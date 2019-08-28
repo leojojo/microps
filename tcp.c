@@ -101,6 +101,42 @@ static pthread_t timer_thread;
 struct tcp_cb cb_table[TCP_CB_TABLE_SIZE];
 pthread_mutex_t mutex;
 
+int
+int_to_bin(int decimal) {
+  int binary = 0;
+  int base = 1;
+
+  while(decimal>0){
+    binary = binary + ( decimal % 2 ) * base;
+    decimal = decimal / 2;
+    base = base * 10;
+  }
+  return binary;
+}
+
+void
+tcp_dump(struct tcp_hdr *hdr, size_t plen) {
+  fprintf(stderr, "srcport: %u\n",ntoh16(hdr->src));
+  fprintf(stderr, "dstport: %u\n",ntoh16(hdr->dst));
+  fprintf(stderr, "seq: %u\n",ntoh32(hdr->seq));
+  fprintf(stderr, "ack: %u\n",ntoh32(hdr->ack));
+  fprintf(stderr, "header length: %u (%u bytes)\n",hdr->off >> 4, (hdr->off >> 4)*4);
+
+  fprintf(stderr, "flags: ....%012d(",int_to_bin(hdr->flg));
+  if (TCP_FLG_ISSET(hdr->flg,TCP_FLG_FIN)) fprintf(stderr, "FIN ");
+  if (TCP_FLG_ISSET(hdr->flg,TCP_FLG_SYN)) fprintf(stderr, "SYN ");
+  if (TCP_FLG_ISSET(hdr->flg,TCP_FLG_RST)) fprintf(stderr, "RST ");
+  if (TCP_FLG_ISSET(hdr->flg,TCP_FLG_PSH)) fprintf(stderr, "PSH ");
+  if (TCP_FLG_ISSET(hdr->flg,TCP_FLG_ACK)) fprintf(stderr, "ACK ");
+  if (TCP_FLG_ISSET(hdr->flg,TCP_FLG_URG)) fprintf(stderr, "URG ");
+  fprintf(stderr, ")\n");
+
+  fprintf(stderr, "window size: %u\n",ntoh16(hdr->win));
+  fprintf(stderr, "checksum: %u\n",ntoh16(hdr->sum));
+  fprintf(stderr, "urgent pointer: %u\n",ntoh16(hdr->urg));
+  hexdump(stderr, hdr + 1, plen);
+}
+
 static int
 tcp_txq_add (struct tcp_cb *cb, struct tcp_hdr *hdr, size_t len) {
     struct tcp_txq_entry *txq;
@@ -154,6 +190,12 @@ tcp_tx (struct tcp_cb *cb, uint32_t seq, uint32_t ack, uint8_t flg, uint8_t *buf
     pseudo += hton16((uint16_t)IP_PROTOCOL_TCP);
     pseudo += hton16(sizeof(struct tcp_hdr) + len);
     hdr->sum = cksum16((uint16_t *)hdr, sizeof(struct tcp_hdr) + len, pseudo);
+
+#ifdef DEBUG
+    fprintf(stderr, ">>> tcp_tx <<<\n");
+    tcp_dump(hdr, len);
+#endif
+
     ip_tx(cb->iface, IP_PROTOCOL_TCP, (uint8_t *)hdr, sizeof(struct tcp_hdr) + len, &peer);
     tcp_txq_add(cb, hdr, sizeof(struct tcp_hdr) + len);
     return len;
@@ -406,6 +448,12 @@ tcp_rx (uint8_t *segment, size_t len, ip_addr_t *src, ip_addr_t *dst, struct net
         fprintf(stderr, "tcp checksum error\n");
         return;
     }
+
+#ifdef DEBUG
+    fprintf(stderr, ">>> tcp_rx <<<\n");
+    tcp_dump(hdr, len);
+#endif
+
     pthread_mutex_lock(&mutex);
     for (cb = cb_table; cb < array_tailof(cb_table); cb++) {
         if (!cb->used) {
