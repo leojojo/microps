@@ -28,6 +28,7 @@ struct udp_queue_hdr {
     uint8_t data[0];
 };
 
+// control block matches ip(interface)&port to thread
 struct udp_cb {
     int used;
     struct netif *iface;
@@ -38,6 +39,19 @@ struct udp_cb {
 
 static struct udp_cb cb_table[UDP_CB_TABLE_SIZE];
 static pthread_mutex_t mutex;
+
+void
+udp_dump (struct udp_hdr *hdr, ip_addr_t *src, ip_addr_t *dst, size_t ret) {
+    char addr[IP_ADDR_STR_LEN];
+
+    fprintf(stderr, "sourceIP: %s\n", ip_addr_ntop(src, addr, sizeof(addr)));
+    fprintf(stderr, "destinationIP: %s\n", ip_addr_ntop(dst, addr, sizeof(addr)));
+    fprintf(stderr, "sport: %d\n", ntoh16(hdr->sport));
+    fprintf(stderr, "dport: %d\n", ntoh16(hdr->dport));
+    fprintf(stderr, "len: %d\n", ntoh16(hdr->len));
+    fprintf(stderr, "sum: %d\n", ntoh16(hdr->sum));
+    hexdump(stderr, hdr + 1, ret);
+}
 
 static ssize_t
 udp_tx (struct netif *iface, uint16_t sport, uint8_t *buf, size_t len, ip_addr_t *peer, uint16_t port) {
@@ -60,6 +74,12 @@ udp_tx (struct netif *iface, uint16_t sport, uint8_t *buf, size_t len, ip_addr_t
     pseudo += hton16((uint16_t)IP_PROTOCOL_UDP);
     pseudo += hton16(sizeof(struct udp_hdr) + len);
     hdr->sum = cksum16((uint16_t *)hdr, sizeof(struct udp_hdr) + len, pseudo);
+
+#ifdef DEBUG
+    fprintf(stderr, ">>> udp_tx <<<\n");
+    udp_dump(hdr, &self, peer, len);
+#endif
+
     return ip_tx(iface, IP_PROTOCOL_UDP, (uint8_t *)packet, sizeof(struct udp_hdr) + len, peer);
 }
 
@@ -85,6 +105,10 @@ udp_rx (uint8_t *buf, size_t len, ip_addr_t *src, ip_addr_t *dst, struct netif *
         fprintf(stderr, "udp checksum error\n");
         return;
     }
+#ifdef DEBUG
+    fprintf(stderr, ">>> udp_rx <<<\n");
+    udp_dump(hdr, src, dst, len);
+#endif
     pthread_mutex_lock(&mutex);
     for (cb = cb_table; cb < array_tailof(cb_table); cb++) {
         if (cb->used && (!cb->iface || cb->iface == iface) && cb->port == hdr->dport) {
@@ -385,9 +409,6 @@ main (int argc, char *argv[]) {
         if (ret <= 0) {
             break;
         }
-        fprintf(stderr, "receive message, from %s:%d\n",
-            ip_addr_ntop(&peer_addr, addr, sizeof(addr)) ,ntoh16(peer_port));
-        hexdump(stderr, buf, ret);
         udp_api_sendto(soc, buf, ret, &peer_addr, peer_port);
     }
     udp_api_close(soc);

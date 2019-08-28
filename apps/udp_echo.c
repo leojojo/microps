@@ -145,8 +145,8 @@ main (int argc, char *argv[]) {
         if (len <= 0) {
             break;
         }
-        fprintf(stderr, "message form: %s:%u\n", ip_addr_ntop(&peer_addr, addr, sizeof(addr)), ntoh16(peer_port));
-        hexdump(stderr, buf, len);
+        //fprintf(stderr, "message form: %s:%u\n", ip_addr_ntop(&peer_addr, addr, sizeof(addr)), ntoh16(peer_port));
+        //hexdump(stderr, buf, len);
         udp_api_sendto(soc, buf, len, &peer_addr, peer_port);
     }
     udp_api_close(soc);
