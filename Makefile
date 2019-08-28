@@ -5,7 +5,8 @@ APPS = apps/tcp_echo \
 TEST = test/raw_test \
        test/ethernet_test \
        test/slip_test \
-       test/arp_test
+       test/arp_test \
+       test/icmp_test
 
 OBJS = util.o \
        raw.o \
@@ -20,7 +21,7 @@ OBJS = util.o \
        dhcp.o \
        microps.o
 
-CFLAGS := $(CFLAGS) -g -W -Wall -Wno-unused-parameter -I .
+CFLAGS := $(CFLAGS) -g -W -Wall -Wno-unused-parameter -I . -DDEBUG
 
 ifeq ($(shell uname),Linux)
 	OBJS := $(OBJS) raw/soc.o raw/tap_linux.o

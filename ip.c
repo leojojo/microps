@@ -90,9 +90,43 @@ void
 ip_dump (struct netif *netif, uint8_t *packet, size_t plen) {
     struct netif_ip *iface;
     char addr[IP_ADDR_STR_LEN];
+    struct ip_hdr *hdr;
+    static const char *proto_name[] = {
+      "",
+      "ICMP",
+      "",
+      "",
+      "",
+      "",
+      "TCP",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "UDP",
+    };
 
     iface = (struct netif_ip *)netif;
     fprintf(stderr, " dev; %s (%s)\n", netif->dev->name, ip_addr_ntop(&iface->unicast, addr, sizeof(addr)));
+    hdr = (struct ip_hdr *)packet;
+    fprintf(stderr, " version: %u\n", hdr->vhl >> 4);
+    fprintf(stderr, " header length: %u (%u bytes)\n", hdr->vhl & 0xf, (hdr->vhl & 0xf)*4);
+    fprintf(stderr, " tos: %u\n", hdr->tos);
+    fprintf(stderr, " len: %u\n", ntoh16(hdr->len));
+    fprintf(stderr, " id: %u\n", ntoh16(hdr->id));
+    fprintf(stderr, " offset: %u\n", ntoh16(hdr->offset));
+    fprintf(stderr, " ttl: %u\n", hdr->ttl);
+    fprintf(stderr, " protocol: %u (%s)\n", hdr->protocol, proto_name[hdr->protocol]);
+    fprintf(stderr, " sum: %u\n", ntoh16(hdr->sum));
+    fprintf(stderr, " src: %s\n", ip_addr_ntop(&hdr->src, addr, sizeof(addr)));
+    fprintf(stderr, " dst: %s\n", ip_addr_ntop(&hdr->dst, addr, sizeof(addr)));
+    fprintf(stderr, " options: %u\n", ntoh16(hdr->options[0]));
     hexdump(stderr, packet, plen);
 }
 
