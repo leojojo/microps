@@ -21,7 +21,7 @@ OBJS = util.o \
        dhcp.o \
        microps.o
 
-CFLAGS := $(CFLAGS) -g -W -Wall -Wno-unused-parameter -I . -DDEBUG
+CFLAGS := $(CFLAGS) -g -W -Wall -Wno-unused-parameter -I .
 
 ifeq ($(shell uname),Linux)
 	OBJS := $(OBJS) raw/soc.o raw/tap_linux.o
