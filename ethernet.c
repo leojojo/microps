@@ -105,10 +105,12 @@ ethernet_open (struct netdev *dev, int opt) {
         return -1;
     }
     priv->raw = raw;
+    // NOTE: thread for recv
     priv->thread = pthread_self();
     priv->terminate = 0;
     priv->dev = dev;
     dev->priv = priv;
+    // NOTE: microps itself is a userland app (so if users may want to use different MAC address from the interface microps is using)
     if (memcmp(dev->addr, ETHERNET_ADDR_ANY, ETHERNET_ADDR_LEN) == 0) {
         raw->ops->addr(raw, dev->addr, ETHERNET_ADDR_LEN);
     }

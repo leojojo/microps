@@ -45,11 +45,14 @@ soc_dev_open (char *name) {
         perror("bind");
         goto ERROR;
     }
+    // NOTE: "G"et flags
     if (ioctl(dev->fd, SIOCGIFFLAGS, &ifr) == -1) {
         perror("ioctl [SIOCGIFFLAGS]");
         goto ERROR;
     }
+    // NOTE: Promiscuous mode does NOT drop packets that are NOT for you
     ifr.ifr_flags = ifr.ifr_flags | IFF_PROMISC;
+    // NOTE: "S"et flags
     if (ioctl(dev->fd, SIOCSIFFLAGS, &ifr) == -1) {
         perror("ioctl [SIOCSIFFLAGS]");
         goto ERROR;
@@ -78,6 +81,7 @@ soc_dev_rx (struct soc_dev *dev, void (*callback)(uint8_t *, size_t, void *), vo
     ssize_t len;
     uint8_t buf[2048];
 
+    // NOTE: non-blocking; set timeout for listen
     pfd.fd = dev->fd;
     pfd.events = POLLIN;
     ret = poll(&pfd, 1, timeout);

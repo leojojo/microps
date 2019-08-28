@@ -27,10 +27,11 @@ struct arp_hdr {
     uint16_t op;
 };
 
+// NOTE: attribute packed because (6 + 4) % 8 = 2 and struct becomes unaligned
 struct arp_ethernet {
     struct arp_hdr hdr;
-    uint8_t sha[ETHERNET_ADDR_LEN];
-    ip_addr_t spa;
+    uint8_t sha[ETHERNET_ADDR_LEN];     // 8bit * 6(ADDR_LEN) = 6 bytes
+    ip_addr_t spa;                      // 4 bytes
     uint8_t tha[ETHERNET_ADDR_LEN];
     ip_addr_t tpa;
 } __attribute__ ((packed));

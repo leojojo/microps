@@ -3,6 +3,12 @@ microps (MICRO tcp/ip Protocol Stack)
 
 Tiny TCP/IP protcol stack for lecture.
 
+---
+## 抽象化
+- (/raw.h): rawデバイス
+- `struct netdev`(/net.h#L56): L2デバイス
+---
+
 ## Build
 
 Build sample applications and test programs
