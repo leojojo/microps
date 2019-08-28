@@ -1,6 +1,7 @@
 APPS = apps/tcp_echo \
        apps/udp_echo \
-       apps/router
+       apps/router \
+       apps/sock_echo
 
 TEST = test/raw_test \
        test/ethernet_test \
@@ -19,7 +20,8 @@ OBJS = util.o \
        udp.o \
        tcp.o \
        dhcp.o \
-       microps.o
+       microps.o \
+       socket.o
 
 CFLAGS := $(CFLAGS) -g -W -Wall -Wno-unused-parameter -I .
 

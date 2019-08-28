@@ -2,6 +2,7 @@
 apps/tcp_echo
 apps/udp_echo
 apps/router
+apps/sock_echo
 
 # Test programs
 test/raw_tap_test
